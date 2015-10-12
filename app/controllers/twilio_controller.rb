@@ -7,10 +7,8 @@ class TwilioController < ApplicationController
     :connect
   ]
 
-  # Define our Twilio credentials as instance variables for later use
-  @@twilio_sid = ENV['TWILIO_ACCOUNT_SID']
+  # Define our Twilio auth token as an instance variable for later use
   @@twilio_token = ENV['TWILIO_AUTH_TOKEN']
-  @@twilio_number = ENV['TWILIO_NUMBER']
 
   # Render home page
   def index
@@ -24,14 +22,7 @@ class TwilioController < ApplicationController
 
     # Validate contact
     if contact.valid?
-
-      @client = Twilio::REST::Client.new @@twilio_sid, @@twilio_token
-      # Connect an outbound call to the number submitted
-      @call = @client.calls.create(
-        :from => @@twilio_number,
-        :to => contact.phone,
-        :url => connect_url # Fetch instructions from this URL when the call connects
-      )
+      MakeCallJob.perform_later(contact.phone, connect_url)
 
       # Lets respond to the ajax call with some positive reinforcement
       @msg = { :message => 'Phone call incoming!', :status => 'ok' }

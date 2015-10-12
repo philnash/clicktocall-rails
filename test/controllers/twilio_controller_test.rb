@@ -1,6 +1,7 @@
 require 'test_helper'
 
 class TwilioControllerTest < ActionController::TestCase
+  include ActiveJob::TestHelper
 
   test "should get index" do
     get :index
@@ -8,23 +9,15 @@ class TwilioControllerTest < ActionController::TestCase
   end
 
   test "should initiate a call with a real phone number" do
-    twilio_number = '15008675309'
     to_number = '12066505813'
-    client = Minitest::Mock.new
-    calls = Minitest::Mock.new
-    calls.expect(:create, true, [{:from => twilio_number, :to => to_number, :url => 'http://test.host/connect'}])
-    client.expect(:calls, calls)
-    TwilioController.class_variable_set(:@@twilio_number, twilio_number)
-    Twilio::REST::Client.stub :new, client do
+    assert_enqueued_with job: MakeCallJob, args: [to_number, connect_url] do
       post :call, :phone => to_number, :format => 'json'
-
       assert_response :ok
       json = JSON.parse(response.body)
       assert_equal 'ok', json['status']
       assert_equal 'Phone call incoming!', json['message']
+      assert_enqueued_jobs 1
     end
-    client.verify
-    calls.verify
   end
 
   test "should return a failure with a non real phone number" do

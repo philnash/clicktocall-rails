@@ -17,7 +17,8 @@ gem 'jbuilder', '~> 2.0'
 gem 'phony_rails'
 # Twilio REST API.
 gem 'twilio-ruby'
-
+# Sidekiq gem for Active Job
+gem 'sidekiq'
 
 group :development, :test do
   gem 'sqlite3'
